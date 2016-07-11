@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
 
-function home_bootstrap {
+function service_profile {
   local shome="${_service_home:-"$(cd -P -- "${BASH_SOURCE%/*}/.." && pwd -P)"}"
-  source "$shome/script/profile"
-
-  block compile bundler
+  PATH="$shome/bin:$PATH"
 }
 
-home_bootstrap "$@"
+service_profile
