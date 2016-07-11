@@ -25,9 +25,16 @@ __EOF
 #!/usr/bin/env bash
 exec 2>&1
 source "$HOME/.bashrc"
-exec envdir ./env ${nm_run}
+exec envdir ./env "${pth_service}/run.impl"
 __EOF
   chmod 755 "${pth_service}/run"
+
+  cat <<"__EOF" | env nm_run="$nm_run" envsubst > "${pth_service}/run.impl"
+#!/usr/bin/env bash
+exec 2>&1
+exec ${nm_run}
+__EOF
+  chmod 755 "${pth_service}/run.impl"
 }
 
 function add_env {
@@ -39,11 +46,7 @@ function add_env {
 }
 
 function read_services {
-  cat "service.json"
-}
-
-function service_as_args {
-  jq -r '.services | to_entries[] | "\(.key) \(@sh "\(.value.run //"block service \(.value.provider)")") \(reduce (.value.env | to_entries[]) as $ele (""; . + " " + "\($ele.key)=\(@sh "\($ele.value)")"))"'
+  cat "Blockfile.json" | jq -r '.run//{} | keys'
 }
 
 function main {
@@ -54,34 +57,35 @@ function main {
   cd "$BUILD_DIR"
 
   if [[ "$#" == 0 ]]; then
-    if [[ ! -f "service.json" ]]; then
-      echo "ERROR: no arguments, no service.json, exiting" 1>&2
+    read_services | while read -r a; do
+      main $BUILD_DIR $CACHE_DIR $ENV_DIR "$a"
+    done
+    return 0
+  fi
+
+  local nm_service="$1"; shift
+  local nm_provider
+
+  if [[ -n "${1:-}" ]]; then
+    nm_provider="$1"; shift
+  else
+    nm_provider="$nm_service"
+  fi
+  
+  echo "-----> Creating runit service $nm_service"
+  new_service "$nm_service" "$nm_provider"
+  while [[ "$#" -gt 0 ]]; do
+    if [[ "$1" =~ ^[_a-zA-Z][_a-zA-Z0-9]*= ]]; then
+      local nm_env="${1%%=*}"
+      local val_env="${1#*=}"
+      indent "$nm_env = $val_env"
+      add_env "$nm_service" "$nm_env" "$val_env"
+    else
+      echo "ERROR: unrecognized env variable: $1; should be [:alpha:_][:alphanum:_]*=" 1>&2
       return 1
     fi
-
-    read_services | service_as_args | while read -r a; do
-      eval set -- $a
-      main $BUILD_DIR $CACHE_DIR $ENV_DIR "$@"
-    done
-  else
-    local nm_service="$1"; shift
-    local nm_provider="$1"; shift
-    
-    echo "-----> Creating runit service $nm_service ($nm_provider)"
-    new_service "$nm_service" "$nm_provider"
-    while [[ "$#" -gt 0 ]]; do
-      if [[ "$1" =~ ^[_a-zA-Z][_a-zA-Z0-9]*= ]]; then
-        local nm_env="${1%%=*}"
-        local val_env="${1#*=}"
-        indent "$nm_env = $val_env"
-        add_env "$nm_service" "$nm_env" "$val_env"
-      else
-        echo "ERROR: unrecognized env variable: $1; should be [:alpha:_][:alphanum:_]*=" 1>&2
-        return 1
-      fi
-      shift
-    done
-  fi
+    shift
+  done
 }
 
 source sub "$0" "$@"
