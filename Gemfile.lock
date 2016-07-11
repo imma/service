@@ -1,0 +1,23 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    cabin (0.8.1)
+    clamp (1.0.0)
+    insist (1.0.0)
+    mustache (0.99.8)
+    pleaserun (0.0.24)
+      cabin (> 0)
+      clamp
+      insist
+      mustache (= 0.99.8)
+      stud
+    stud (0.0.22)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  pleaserun
+
+BUNDLED WITH
+   1.11.2
