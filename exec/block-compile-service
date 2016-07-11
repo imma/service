@@ -6,14 +6,14 @@ function indent {
 
 function new_service {
   local nm_service="$1"; shift
-  local nm_run="$1"; shift
+  local nm_block="${nm_service%%.*}"
 
   local pth_service="${BUILD_DIR}/sv/${nm_service}" 
   mkdir -p "${pth_service}"
   mkdir -p "${pth_service}/env"
 
   mkdir -p "${pth_service}/log"
-  cat > "${pth_service}/log/run" <<"__EOF"
+  cat <<"__EOF" >"${pth_service}/log/run" 
 #!/usr/bin/env bash
 exec 2>&1
 source "$HOME/.bashrc"
@@ -21,18 +21,19 @@ exec envdir ../env svlogd -tt .
 __EOF
   chmod 755 "${pth_service}/log/run"
 
-  cat <<"__EOF" | env nm_run="$nm_run" envsubst > "${pth_service}/run"
+  cat <<"__EOF" >"${pth_service}/run"
 #!/usr/bin/env bash
+runhome="$(cd -P -- "${BASH_SOURCE%/*}" && pwd -P)"
 exec 2>&1
-source "$HOME/.bashrc"
-exec envdir ./env "${pth_service}/run.impl"
+source "${HOME}/.bashrc"
+exec envdir ./env "${runhome}/run.impl"
 __EOF
   chmod 755 "${pth_service}/run"
 
-  cat <<"__EOF" | env nm_run="$nm_run" envsubst > "${pth_service}/run.impl"
+  cat <<"__EOF" | env nm_block="$nm_block" envsubst '$nm_block' > "${pth_service}/run.impl"
 #!/usr/bin/env bash
 exec 2>&1
-exec ${nm_run}
+exec ${BLOCK_PATH}/${nm_block}/script/server "$@"
 __EOF
   chmod 755 "${pth_service}/run.impl"
 }
@@ -46,7 +47,7 @@ function add_env {
 }
 
 function read_services {
-  cat "Blockfile.json" | jq -r '.run//{} | keys'
+  cat "Blockfile.json" | jq -r '.run//{} | keys[]'
 }
 
 function main {
@@ -64,28 +65,8 @@ function main {
   fi
 
   local nm_service="$1"; shift
-  local nm_provider
-
-  if [[ -n "${1:-}" ]]; then
-    nm_provider="$1"; shift
-  else
-    nm_provider="$nm_service"
-  fi
-  
   echo "-----> Creating runit service $nm_service"
-  new_service "$nm_service" "$nm_provider"
-  while [[ "$#" -gt 0 ]]; do
-    if [[ "$1" =~ ^[_a-zA-Z][_a-zA-Z0-9]*= ]]; then
-      local nm_env="${1%%=*}"
-      local val_env="${1#*=}"
-      indent "$nm_env = $val_env"
-      add_env "$nm_service" "$nm_env" "$val_env"
-    else
-      echo "ERROR: unrecognized env variable: $1; should be [:alpha:_][:alphanum:_]*=" 1>&2
-      return 1
-    fi
-    shift
-  done
+  new_service "$nm_service"
 }
 
 source sub "$0" "$@"

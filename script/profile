@@ -2,7 +2,7 @@
 
 function service_profile {
   local shome="${_service_home:-"$(cd -P -- "${BASH_SOURCE%/*}/.." && pwd -P)"}"
-  PATH="$shome/bin:$PATH"
+  PATH="$shome/bin:$shome/exec:$PATH"
 }
 
 service_profile
