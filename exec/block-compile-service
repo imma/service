@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+
+function indent {
+  echo "         $*"
+}
+
+function new_service {
+  local nm_service="$1"; shift
+  local nm_run="$1"; shift
+
+  local pth_service="${BUILD_DIR}/sv/${nm_service}" 
+  mkdir -p "${pth_service}"
+  mkdir -p "${pth_service}/env"
+
+  mkdir -p "${pth_service}/log"
+  cat > "${pth_service}/log/run" <<"__EOF"
+#!/usr/bin/env bash
+exec 2>&1
+source "$HOME/.bashrc"
+exec envdir ../env svlogd -tt .
+__EOF
+  chmod 755 "${pth_service}/log/run"
+
+  cat <<"__EOF" | env nm_run="$nm_run" envsubst > "${pth_service}/run"
+#!/usr/bin/env bash
+exec 2>&1
+source "$HOME/.bashrc"
+exec envdir ./env ${nm_run}
+__EOF
+  chmod 755 "${pth_service}/run"
+}
+
+function add_env {
+  local nm_service="$1"; shift
+  local nm_env="$1"; shift
+  local val_env="$1"; shift
+
+  echo "$val_env" > "${BUILD_DIR}/sv/${nm_service}/env/${nm_env}"
+}
+
+function read_services {
+  cat "service.json"
+}
+
+function service_as_args {
+  jq -r '.services | to_entries[] | "\(.key) \(@sh "\(.value.run //"block service \(.value.provider)")") \(reduce (.value.env | to_entries[]) as $ele (""; . + " " + "\($ele.key)=\(@sh "\($ele.value)")"))"'
+}
+
+function main {
+  local BUILD_DIR="$1"; shift
+  local CACHE_DIR="$1"; shift
+  local ENV_DIR="$1"; shift
+
+  cd "$BUILD_DIR"
+
+  if [[ "$#" == 0 ]]; then
+    if [[ ! -f "service.json" ]]; then
+      echo "ERROR: no arguments, no service.json, exiting" 1>&2
+      return 1
+    fi
+
+    read_services | service_as_args | while read -r a; do
+      eval set -- $a
+      main $BUILD_DIR $CACHE_DIR $ENV_DIR "$@"
+    done
+  else
+    local nm_service="$1"; shift
+    local nm_provider="$1"; shift
+    
+    echo "-----> Creating runit service $nm_service ($nm_provider)"
+    new_service "$nm_service" "$nm_provider"
+    while [[ "$#" -gt 0 ]]; do
+      if [[ "$1" =~ ^[_a-zA-Z][_a-zA-Z0-9]*= ]]; then
+        local nm_env="${1%%=*}"
+        local val_env="${1#*=}"
+        indent "$nm_env = $val_env"
+        add_env "$nm_service" "$nm_env" "$val_env"
+      else
+        echo "ERROR: unrecognized env variable: $1; should be [:alpha:_][:alphanum:_]*=" 1>&2
+        return 1
+      fi
+      shift
+    done
+  fi
+}
+
+source sub "$0" "$@"
