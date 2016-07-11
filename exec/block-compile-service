@@ -5,10 +5,15 @@ function indent {
 }
 
 function new_service {
-  local nm_service="$1"; shift
-  local nm_block="${nm_service%%.*}"
+  local nm_runit="$1"; shift
+  local nm_block="${nm_runit%%.*}"
+  local nm_service="${nm_runit#*.}"
 
-  local pth_service="${BUILD_DIR}/sv/${nm_service}" 
+  if [[ "$nm_service" == "$nm_block" ]]; then
+    nm_service='default'
+  fi
+
+  local pth_service="${BUILD_DIR}/sv/${nm_runit}" 
   mkdir -p "${pth_service}"
   mkdir -p "${pth_service}/env"
 
@@ -21,12 +26,12 @@ exec envdir ../env svlogd -tt .
 __EOF
   chmod 755 "${pth_service}/log/run"
 
-  cat <<"__EOF" >"${pth_service}/run"
+  cat <<"__EOF" | env nm_service="$nm_service" envsubst '$nm_service' > "${pth_service}/run"
 #!/usr/bin/env bash
 runhome="$(cd -P -- "${BASH_SOURCE%/*}" && pwd -P)"
 exec 2>&1
 source "${HOME}/.bashrc"
-exec envdir ./env "${runhome}/run.impl"
+exec envdir ./env "${runhome}/run.impl" "${nm_service}" "$@"
 __EOF
   chmod 755 "${pth_service}/run"
 
