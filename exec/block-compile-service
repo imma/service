@@ -13,7 +13,7 @@ function new_service {
     nm_service='default'
   fi
 
-  local pth_service="${BUILD_DIR}/sv/${nm_runit}" 
+  local pth_service="${SVDIR}/sv/${nm_runit}" 
   mkdir -p "${pth_service}"
   mkdir -p "${pth_service}/env"
 
@@ -48,7 +48,7 @@ function add_env {
   local nm_env="$1"; shift
   local val_env="$1"; shift
 
-  echo "$val_env" > "${BUILD_DIR}/sv/${nm_service}/env/${nm_env}"
+  echo "$val_env" > "${SVDIR}/sv/${nm_service}/env/${nm_env}"
 }
 
 function read_services {
@@ -60,7 +60,8 @@ function main {
   local CACHE_DIR="$1"; shift
   local ENV_DIR="$1"; shift
 
-  cd "$BUILD_DIR"
+  mkdir -p "$SVDIR"
+  cd "$SVDIR"
 
   if [[ "$#" == 0 ]]; then
     read_services | while read -r a; do
