@@ -61,7 +61,6 @@ function main {
   local ENV_DIR="$1"; shift
 
   mkdir -p "$SVDIR"
-  cd "$SVDIR"
 
   if [[ "$#" == 0 ]]; then
     read_services | while read -r a; do
