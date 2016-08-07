@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-function service_profile {
+function _service_profile {
   local shome="${_service_home:-"$(cd -P -- "${BASH_SOURCE%/*}/.." && pwd -P)"}"
   PATH="$shome/bin:$shome/exec:$PATH"
 }
 
-service_profile
+_service_profile
