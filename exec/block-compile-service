@@ -9,11 +9,18 @@ function new_service {
   local nm_block="${nm_runit%%.*}"
   local nm_service="${nm_runit#*.}"
 
+  if [[ ! -x "${BLOCK_PATH}/${nm_block}/script/server" ]]; then
+    return 0
+  fi
+
+  echo "-----> Creating runit service $nm_service"
+
   if [[ "$nm_service" == "$nm_block" ]]; then
     nm_service='default'
   fi
 
   local pth_service="${BUILD_DIR}/sv/${nm_runit}" 
+
   mkdir -p "${pth_service}"
   mkdir -p "${pth_service}/env"
 
@@ -72,7 +79,6 @@ function main {
   fi
 
   local nm_service="$1"; shift
-  echo "-----> Creating runit service $nm_service"
   new_service "$nm_service"
 }
 
