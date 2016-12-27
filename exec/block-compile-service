@@ -53,6 +53,7 @@ function add_env {
 
 function read_services {
   cat "Blockfile.json" | jq -r '.run//{} | keys[]'
+  cat "Blockfile.json.site" 2>/dev/null | jq -r '.run//{} | keys[]'
 }
 
 function main {
