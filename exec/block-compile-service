@@ -44,10 +44,10 @@ __EOF
   chmod 755 "${pth_service}/run"
 
   local nm_block_home="_${nm_block//-/_}_home"
-  cat <<"__EOF" | env nm_block="$nm_block" envsubst '$nm_block' > "${pth_service}/run.impl"
+  cat <<"__EOF" | env pth_block="${!nm_block_home}" envsubst '$pth_block' > "${pth_service}/run.impl"
 #!/usr/bin/env bash
 exec 2>&1
-exec ${!nm_block_home}/script/server "$@"
+exec ${pth_block}/script/server "$@"
 __EOF
   chmod 755 "${pth_service}/run.impl"
 }
