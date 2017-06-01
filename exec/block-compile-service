@@ -50,6 +50,8 @@ exec 2>&1
 exec ${pth_block}/script/server "$@"
 __EOF
   chmod 755 "${pth_service}/run.impl"
+
+  ln -vnfs "../sv/$nm_service" "$SVDIR/"
 }
 
 function add_env {
