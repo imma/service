@@ -8,6 +8,7 @@ function new_service {
   local nm_runit="$1"; shift
   local nm_block="${nm_runit%%.*}"
   local nm_service="${nm_runit#*.}"
+  local nm_servic_keep="$nm_service"
 
   local nm_block_home="_${nm_block//-/_}_home"
   if [[ ! -x "${!nm_block_home:-}/script/server" ]]; then
@@ -51,7 +52,7 @@ exec ${pth_block}/script/server "$@"
 __EOF
   chmod 755 "${pth_service}/run.impl"
 
-  ln -vnfs "../sv/$nm_service" "$SVDIR/"
+  ln -vnfs "../sv/$nm_service_keep" "$SVDIR/"
 }
 
 function add_env {
