@@ -8,7 +8,7 @@ function new_service {
   local nm_runit="$1"; shift
   local nm_block="${nm_runit%%.*}"
   local nm_service="${nm_runit#*.}"
-  local nm_servic_keep="$nm_service"
+  local nm_service_keep="$nm_service"
 
   local nm_block_home="_${nm_block//-/_}_home"
   if [[ ! -x "${!nm_block_home:-}/script/server" ]]; then
