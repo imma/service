@@ -11,7 +11,14 @@ function new_service {
   local nm_service_keep="$nm_service"
 
   local nm_block_home="_${nm_block//-/_}_home"
+
   if [[ ! -x "${!nm_block_home:-}/script/server" ]]; then
+    if [[ -f "${!nm_block_home:-}/Blockfile.json" ]]; then
+      pushd "${!nm_block_home}"
+      block compile service
+      popd
+    fi
+
     return 0
   fi
 
