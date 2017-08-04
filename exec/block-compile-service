@@ -43,12 +43,12 @@ exec envdir ../env svlogd -tt .
 __EOF
   chmod 755 "${pth_service}/log/run"
 
-  cat <<"__EOF" | env nm_service="$nm_service" envsubst '$nm_service' > "${pth_service}/run"
+  cat <<"__EOF" | env nm_service="$nm_service" args="$*" envsubst '$nm_service $args' > "${pth_service}/run"
 #!/usr/bin/env bash
 runhome="$(cd -P -- "${BASH_SOURCE%/*}" && pwd -P)"
 exec 2>&1
 source "${HOME}/.bashrc"
-exec envdir ./env "${runhome}/run.impl" "${nm_service}" "$@"
+exec envdir ./env "${runhome}/run.impl" "${nm_service}" ${args}
 __EOF
   chmod 755 "${pth_service}/run"
 
@@ -91,7 +91,7 @@ function main {
   fi
 
   local nm_service="$1"; shift
-  new_service "$nm_service"
+  new_service "$nm_service" "$@"
 }
 
 source sub "$0" "$@"
