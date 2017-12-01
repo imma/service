@@ -40,7 +40,7 @@ function new_service {
   done
 
   if [[ "$#" == 0 ]]; then
-    set -- $(cat "Blockfile.json" | jq -r --arg service "$nm_runit" '.run[$service].args | map(@sh) | join(" ")')
+    set -- $(eval echo $(cat "Blockfile.json" | jq -r --arg service "$nm_runit" '.run[$service].args | map(@sh) | join(" ")'))
   fi
 
   cat <<"__EOF" >"${pth_service}/log/run" 
