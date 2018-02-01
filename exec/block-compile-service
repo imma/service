@@ -35,12 +35,12 @@ function new_service {
   mkdir -p "${pth_service}/env"
   mkdir -p "${pth_service}/log"
 
-  cat "Blockfile.json" | jq -r --arg service "$nm_runit" '.run[$service].env | to_entries | map("\(.key | ascii_upcase) \(.value)")[]' | while read -r nm_env val_env; do
+  cat "Blockfile.json" | jq -r --arg service "$nm_runit" '.run[$service].env//{} | to_entries | map("\(.key | ascii_upcase) \(.value)")[]' | while read -r nm_env val_env; do
   printf '%s' "$val_env" > "${pth_service}/env/${nm_env}"
   done
 
   if [[ "$#" == 0 ]]; then
-    set -- $(eval echo $(cat "Blockfile.json" | jq -r --arg service "$nm_runit" '.run[$service].args | map(@sh) | join(" ")'))
+    set -- $(eval echo $(cat "Blockfile.json" | jq -r --arg service "$nm_runit" '.run[$service].args//[] | map(@sh) | join(" ")'))
   fi
 
   cat <<"__EOF" >"${pth_service}/log/run" 
